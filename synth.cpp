@@ -11,6 +11,9 @@ SDL_Renderer *renderer = nullptr;
 const int SCREEN_WIDTH = 840;
 const int SCREEN_HEIGHT = 620;
 
+const int SNAKE_WIDTH = 30;
+const int SNAKE_HEIGHT = 30;
+
 // Function declaration
 
 void drawRect(int x, int y)
@@ -20,7 +23,7 @@ void drawRect(int x, int y)
 
     // Draw shapes
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_Rect rect = {x, y, 200, 150};
+    SDL_Rect rect = {x, y, SNAKE_HEIGHT, SNAKE_WIDTH};
     SDL_RenderFillRect(renderer, &rect);
 }
 
@@ -72,12 +75,13 @@ int main()
 
     bool isVertical = true;
     bool running = true;
+
     SDL_Event event;
 
-    int x = 100;
+    int x = 840;
     int y = 100;
 
-    int diff = 2;
+    int diff = 1;
 
     while (running)
     {
@@ -96,33 +100,49 @@ int main()
                     isVertical = false;
                     if (diff > 0)
                         diff *= (-1);
+                    std::cout << diff;
                     break;
                 case SDLK_DOWN:
                     isVertical = false;
                     if (diff < 0)
                         diff *= (-1);
+                    std::cout << diff;
 
                     break;
                 case SDLK_RIGHT:
                     isVertical = true;
                     if (diff < 0)
                         diff *= (-1);
+                    std::cout << diff;
                     break;
                 case SDLK_LEFT:
                     isVertical = true;
                     if (diff > 0)
                         diff *= (-1);
+                    std::cout << diff;
                     break;
+                default:
+                    isVertical = true;
+                    diff = 2;
                 }
             }
         }
 
+        // std::cout << diff;
         if (isVertical)
             x += diff;
         else
             y += diff;
 
-        // std::cout << diff;
+        if (x + SNAKE_WIDTH > SCREEN_WIDTH)
+            x = 0;
+        else if (x == 0)
+            x = SCREEN_WIDTH - SNAKE_WIDTH;
+        else if (y == 0)
+            y = SCREEN_HEIGHT - SNAKE_HEIGHT;
+        else if (y == SCREEN_HEIGHT)
+            y = 0;
+
         drawRect(x, y);
         SDL_RenderPresent(renderer);
     }
