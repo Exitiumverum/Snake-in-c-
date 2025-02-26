@@ -1,12 +1,13 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <cstdlib>
+#include <ctime>
 
 // compile code
 //  g++ synth.cpp -o synth -lSDL2 -lSDL2_ttf
 //./synth
 
-// Forward declare renderer as global (not ideal but works for this example)
 SDL_Renderer *renderer = nullptr;
 const int SCREEN_WIDTH = 840;
 const int SCREEN_HEIGHT = 620;
@@ -14,12 +15,12 @@ const int SCREEN_HEIGHT = 620;
 const int SNAKE_WIDTH = 22;
 const int SNAKE_HEIGHT = 22;
 
+const int APPLE_WIDTH = 14;
+const int APPLE_HEIGHT = 14;
+
 int snakeRgb[] = {255, 0, 0, 255};
 
-// Add a float array to store the positions of each segment
-float segmentPositions[100][2]; // Assuming a maximum of 100 segments
-
-// Function declaration
+float segmentPositions[100][2];
 
 void changeSnakeRgb(int *array, int size)
 {
@@ -29,7 +30,14 @@ void changeSnakeRgb(int *array, int size)
     }
 }
 
-void drawRect(int lives, bool isVertical, bool isPositive)
+void drawApple(int x, int y)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_Rect rect = {x, y, APPLE_WIDTH, APPLE_HEIGHT};
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void drawSnake(int lives, bool isVertical, bool isPositive)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -79,6 +87,7 @@ void drawRect(int lives, bool isVertical, bool isPositive)
 
 int main()
 {
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         std::cout << "Failed to initialize the SDL2 lib: " << SDL_GetError() << "\n";
@@ -120,6 +129,7 @@ int main()
     bool isVertical = true;
     bool isPositive = true;
     bool running = true;
+    bool isAppleEaten = true; // Initialize to true to generate the first apple
 
     SDL_Event event;
 
@@ -127,7 +137,7 @@ int main()
     int y = 100;
 
     int diff = 7;
-    int lives = 4;
+    int lives = 2;
 
     int gap = 5;
 
@@ -137,8 +147,26 @@ int main()
         segmentPositions[i][1] = y;
     }
 
+    srand(static_cast<unsigned int>(time(0)));
+
     while (running)
     {
+        int appleX, appleY;
+        if (isAppleEaten) // Only generate a new apple if the previous one was eaten
+        {
+            appleX = rand() % (SCREEN_WIDTH - APPLE_WIDTH);
+            appleY = rand() % (SCREEN_HEIGHT - APPLE_HEIGHT);
+            isAppleEaten = false; // Reset the flag after generating a new apple
+        }
+        if (segmentPositions[0][0] < appleX + APPLE_WIDTH &&
+            segmentPositions[0][0] + SNAKE_WIDTH > appleX &&
+            segmentPositions[0][1] < appleY + APPLE_HEIGHT &&
+            segmentPositions[0][1] + SNAKE_HEIGHT > appleY)
+        {
+            std::cout << "Apple eaten" << std::endl;
+            lives++;
+            isAppleEaten = true; // Set the flag to true when the apple is eaten
+        }
         while (SDL_PollEvent(&event))
         {
 
@@ -204,7 +232,9 @@ int main()
             segmentPositions[0][1] = 0;
 
         // changeSnakeRgb(snakeRgb, sizeof(snakeRgb[0]));
-        drawRect(lives, isVertical, isPositive);
+        drawSnake(lives, isVertical, isPositive);
+        if (!isAppleEaten)
+            drawApple(appleX, appleY);
         SDL_RenderPresent(renderer);
     }
 
