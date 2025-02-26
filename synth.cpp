@@ -16,6 +16,9 @@ const int SNAKE_HEIGHT = 22;
 
 int snakeRgb[] = {255, 0, 0, 255};
 
+// Add a float array to store the positions of each segment
+float segmentPositions[100][2]; // Assuming a maximum of 100 segments
+
 // Function declaration
 
 void changeSnakeRgb(int *array, int size)
@@ -26,15 +29,46 @@ void changeSnakeRgb(int *array, int size)
     }
 }
 
-void drawRect(int x, int y)
+void drawRect(int lives, bool isVertical, bool isPositive)
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    int gap = 30; // Define the gap between squares
+
     // Draw shapes
-    SDL_SetRenderDrawColor(renderer, snakeRgb[0], snakeRgb[1], snakeRgb[2], snakeRgb[3]);
-    SDL_Rect rect = {x, y, SNAKE_HEIGHT, SNAKE_WIDTH};
-    SDL_RenderFillRect(renderer, &rect);
+    for (int i = 0; i < lives; i++)
+    {
+        SDL_SetRenderDrawColor(renderer, snakeRgb[0], snakeRgb[1], snakeRgb[2], snakeRgb[3]);
+        int offset = gap * i; // Calculate the offset based on the gap and segment index
+        std::cout << offset;
+        if (isVertical)
+        {
+            if (isPositive)
+            {
+                SDL_Rect rect = {static_cast<int>(segmentPositions[i][0] - offset), static_cast<int>(segmentPositions[i][1]), SNAKE_HEIGHT, SNAKE_WIDTH}; // Adjust Y position
+                SDL_RenderFillRect(renderer, &rect);
+            }
+            else
+            {
+                SDL_Rect rect = {static_cast<int>(segmentPositions[i][0] + offset), static_cast<int>(segmentPositions[i][1] - SNAKE_HEIGHT), SNAKE_HEIGHT, SNAKE_WIDTH}; // Adjust Y position
+                SDL_RenderFillRect(renderer, &rect);
+            }
+        }
+        else
+        {
+            if (isPositive)
+            {
+                SDL_Rect rect = {static_cast<int>(segmentPositions[i][0]), static_cast<int>(segmentPositions[i][1] + offset), SNAKE_WIDTH, SNAKE_HEIGHT}; // Adjust X position
+                SDL_RenderFillRect(renderer, &rect);
+            }
+            else
+            {
+                SDL_Rect rect = {static_cast<int>(segmentPositions[i][0] - SNAKE_WIDTH), static_cast<int>(segmentPositions[i][1] - offset), SNAKE_WIDTH, SNAKE_HEIGHT}; // Adjust X position
+                SDL_RenderFillRect(renderer, &rect);
+            }
+        }
+    }
 }
 
 // class Player
@@ -84,6 +118,7 @@ int main()
     }
 
     bool isVertical = true;
+    bool isPositive = true;
     bool running = true;
 
     SDL_Event event;
@@ -92,6 +127,15 @@ int main()
     int y = 100;
 
     int diff = 7;
+    int lives = 4;
+
+    int gap = 5;
+
+    for (int i = 0; i < 100; i++)
+    {
+        segmentPositions[i][0] = x;
+        segmentPositions[i][1] = y;
+    }
 
     while (running)
     {
@@ -109,27 +153,27 @@ int main()
                 {
                 case SDLK_UP:
                     isVertical = false;
+                    isPositive = true;
                     if (diff > 0)
                         diff *= (-1);
-                    std::cout << diff;
                     break;
                 case SDLK_DOWN:
                     isVertical = false;
+                    isPositive = false;
                     if (diff < 0)
                         diff *= (-1);
-                    std::cout << diff;
                     break;
                 case SDLK_RIGHT:
                     isVertical = true;
+                    isPositive = true;
                     if (diff < 0)
                         diff *= (-1);
-                    std::cout << diff;
                     break;
                 case SDLK_LEFT:
                     isVertical = true;
+                    isPositive = false;
                     if (diff > 0)
                         diff *= (-1);
-                    std::cout << diff;
                     break;
                 }
             }
@@ -138,22 +182,29 @@ int main()
         SDL_Delay(16);
 
         // std::cout << diff;
+        // Update segment positions
+        for (int i = lives - 1; i > 0; i--)
+        {
+            segmentPositions[i][0] = segmentPositions[i - 1][0];
+            segmentPositions[i][1] = segmentPositions[i - 1][1];
+        }
         if (isVertical)
-            x += diff;
+            segmentPositions[0][0] += diff;
         else
-            y += diff;
+            segmentPositions[0][1] += diff;
 
-        if (x + SNAKE_WIDTH >= SCREEN_WIDTH)
-            x = 0;
-        else if (x <= 0)
-            x = SCREEN_WIDTH - SNAKE_WIDTH;
-        if (y <= 0)
-            y = SCREEN_HEIGHT - SNAKE_HEIGHT;
-        else if (y >= SCREEN_HEIGHT)
-            y = 0;
+        // Wrap around logic
+        if (segmentPositions[0][0] + SNAKE_WIDTH >= SCREEN_WIDTH)
+            segmentPositions[0][0] = 0;
+        else if (segmentPositions[0][0] <= 0)
+            segmentPositions[0][0] = SCREEN_WIDTH - SNAKE_WIDTH;
+        if (segmentPositions[0][1] <= 0)
+            segmentPositions[0][1] = SCREEN_HEIGHT - SNAKE_HEIGHT;
+        else if (segmentPositions[0][1] >= SCREEN_HEIGHT)
+            segmentPositions[0][1] = 0;
 
         // changeSnakeRgb(snakeRgb, sizeof(snakeRgb[0]));
-        drawRect(x, y);
+        drawRect(lives, isVertical, isPositive);
         SDL_RenderPresent(renderer);
     }
 
